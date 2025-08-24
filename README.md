@@ -1,7 +1,7 @@
 # TinySignal
 TinySignal is a local-first, lightweight app that clusters Hacker News posts and delivers trending discussions straight to your Telegram.
 
-![](assets/TinySignal-screen-recording.gif)
+<img src="assets/TinySignal-screen-recording.gif" width="300">
 
 # How to run
 ```bash
