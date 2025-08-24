@@ -6,3 +6,4 @@ dump.rdb
 posts.db
 .artifact/*
 *.duckdb
+*.log
