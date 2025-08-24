@@ -19,7 +19,7 @@ Powered by DuckDB, a fast in-process database system.
 No extra services are required (e.g., Postgres, Redis, vector databases, etc.).
 
 - DuckDB as a database SQL engine
-- DuckDB as a vectory databases
+- DuckDB as a vector databases
 - DuckDB as a cache handler (see app/services/cache.py)
 
 # Design
