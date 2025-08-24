@@ -28,7 +28,7 @@ def fetch_by_post_id(post_id: int) -> dict:
         raise e
 
 def fetch_and_insert():
-    post_ids = fetch_top_stories()
+    post_ids = fetch_top_stories()[:100]
     for post_id in tqdm(post_ids, desc="Fetching and processing"):
         fetch_result = fetch_by_post_id(post_id)
         if not fetch_result: continue

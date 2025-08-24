@@ -1,23 +1,22 @@
-from typing import Dict, Any
 from ..repositories.cluster import ClusterRepository
 from ..models.cluster import ClusterDisplayModel
 from . import cluster
 
 cluster_repo = ClusterRepository()
 
-def get_telegram_hot_news() -> Dict[str, Any]:
+def get_telegram_hot_news() -> dict:
     """Get hot news clusters formatted for Telegram inline buttons"""
     clusters = cluster_repo.get_clusters()
-    if len(clusters) == 0:
-        return {
-            "text": "There aren't any hot news recently.",
-            "reply_markup": {"inline_keyboard": []}
-        }
+    # if len(clusters) == 0:
+    #     return {
+    #         "text": "There aren't any hot news recently.",
+    #         "reply_markup": {"inline_keyboard": []}
+    #     }
     
     cluster_data = cluster.get_cluster_display_data()
     return format_clusters_for_inline_buttons(cluster_data)
 
-def format_clusters_for_inline_buttons(clusters: list[ClusterDisplayModel]) -> Dict[str, Any]:
+def format_clusters_for_inline_buttons(clusters: list[ClusterDisplayModel]) -> dict:
     """Format cluster data for Telegram inline keyboard"""
     if not clusters:
         return {
@@ -38,7 +37,7 @@ def format_clusters_for_inline_buttons(clusters: list[ClusterDisplayModel]) -> D
         "reply_markup": {"inline_keyboard": inline_keyboard}
     }
 
-def get_telegram_cluster_posts(cluster_idx: int) -> Dict[str, Any]:
+def get_telegram_cluster_posts(cluster_idx: int) -> dict:
     """Get posts for a specific cluster formatted for Telegram inline buttons"""
     posts = cluster_repo.get_posts_by_cluster_idx(cluster_idx, limit=10)
     
@@ -68,7 +67,7 @@ def get_telegram_cluster_posts(cluster_idx: int) -> Dict[str, Any]:
         "reply_markup": {"inline_keyboard": inline_keyboard}
     }
 
-def handle_telegram_callback(callback_data: str) -> Dict[str, Any]:
+def handle_telegram_callback(callback_data: str) -> dict:
     """Handle Telegram callback queries"""
     if callback_data.startswith("cluster_"):
         cluster_idx = int(callback_data.split("_")[1])

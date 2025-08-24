@@ -1,8 +1,8 @@
-import json
-
-from ..config import settings
+import os
 
 import duckdb
+
+from ..config import settings
 
 
 class ClusterRepository:
@@ -10,8 +10,12 @@ class ClusterRepository:
         self, 
         db_path: str = f"{settings['ARTIFACT_DIR']}/hn_data.duckdb"
     ) -> None:
-        self.conn = duckdb.connect(db_path)
+        self.db_path = db_path
+        self.conn = duckdb.connect(self.db_path)
         
+    def is_persistent_path_exists(self):
+        return os.path.exists(self.db_path)
+
     def _tuple_to_dict(
         self, tuple_data: tuple, keys: list | None = None
     ) -> dict:
@@ -29,8 +33,10 @@ class ClusterRepository:
     
     def create_cluster_table(self) -> None:
         query = """
+        CREATE SEQUENCE cluster_table_id_sequence START 1;
+
         CREATE TABLE IF NOT EXISTS hn_clusters (
-            id BIGINT PRIMARY KEY,
+            id BIGINT PRIMARY KEY DEFAULT nextval('cluster_table_id_sequence'),
             hn_embedding_id BIGINT REFERENCES hn_embeddings(id),
             cluster_idx INTEGER
         )
@@ -49,8 +55,10 @@ class ClusterRepository:
     def create_embeddings_table(self) -> None:
         query = \
         """
+        CREATE SEQUENCE embedding_table_id_sequence START 1;
+
         CREATE TABLE IF NOT EXISTS hn_embeddings (
-            id BIGINT PRIMARY KEY,
+            id BIGINT PRIMARY KEY DEFAULT nextval('embedding_table_id_sequence'),
             title VARCHAR(255),
             url VARCHAR(255),
             embedding FLOAT[384],
@@ -78,7 +86,28 @@ class ClusterRepository:
         DO UPDATE SET title = EXCLUDED.title
         """
         cursor = self.conn.cursor()
-        cursor.execute(query, [data[0], data[1]])
+        for item in data:
+            cursor.execute(query, [item[0], item[1]])
+        self.conn.commit()
+
+    def get_cluster_titles(self) -> list[dict]:
+        query = """
+        SELECT * FROM hn_cluster_titles
+        """
+        cursor = self.conn.cursor()
+        results = cursor.execute(query).fetchall()
+        return [{"hn_cluster_idx": row[0], "title": row[1]} for row in results]
+
+    def clear_cluster_titles(self) -> None:
+        query = "DELETE FROM hn_cluster_titles"
+        cursor = self.conn.cursor()
+        cursor.execute(query)
+        self.conn.commit()
+
+    def clear_cluster_table(self) -> None:
+        query = "DELETE FROM hn_clusters"
+        cursor = self.conn.cursor()
+        cursor.execute(query)
         self.conn.commit()
 
     def insert_into_embeddings_table(self, data: dict) -> None:
