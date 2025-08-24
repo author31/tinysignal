@@ -4,3 +4,5 @@ dump.rdb
 .env
 dump.rdb
 posts.db
+.artifact/*
+*.duckdb
