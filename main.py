@@ -1,13 +1,16 @@
 import asyncio
-from telegram import Update, InlineKeyboardMarkup
-from telegram.ext import (Application, CommandHandler, ContextTypes,
-                          CallbackQueryHandler, MessageHandler, filters)
 
+from telegram import InlineKeyboardMarkup, Update
+from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
+                          ContextTypes, MessageHandler, filters)
+
+from app.config import secrets, settings
 from app.logger import setup_logger
 from app.repositories.cluster import ClusterRepository
 from app.services import crawler
-from app.services.telegram import get_telegram_hot_news, get_telegram_cluster_posts, handle_telegram_callback
-from app.config import secrets
+from app.services.telegram import (get_telegram_cluster_posts,
+                                   get_telegram_hot_news,
+                                   handle_telegram_callback)
 
 logger = setup_logger(__name__)
 
@@ -15,7 +18,7 @@ cluster_repo = ClusterRepository()
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle the /start command."""
-    welcome_text = "👋 Welcome to TinySignal Bot!\n\nUse /hotnews to see trending news clusters from Hacker News."
+    welcome_text = "Welcome to TinySignal Bot!\n\nUse /hotnews to see trending news clusters from Hacker News."
     await update.message.reply_text(welcome_text)
 
 async def hot_news_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -60,15 +63,19 @@ async def shutdown_handler(app: Application) -> None:
     logger.info("Shutting down bot...")
     # Add any cleanup code here if needed
 
+def init_app():
+    if not cluster_repo.is_persistent_path_exists():
+        cluster_repo.create_embeddings_table()
+        cluster_repo.create_cluster_table()
+        cluster_repo.create_cluster_title_table()
+
 def main():
     assert "TELEGRAM_BOT_TOKEN" in secrets.keys(), "Missing TELEGRAM_BOT_TOKEN."
     
-    # Initialize database tables
-    cluster_repo.create_cluster_table()
-    cluster_repo.create_cluster_title_table()
-    cluster_repo.create_embeddings_table()
+    init_app()
     
     application = Application.builder().token(secrets["TELEGRAM_BOT_TOKEN"]).build()
+    job_queue = application.job_queue
     
     # Add command handlers
     application.add_handler(CommandHandler("start", start_command))
@@ -78,10 +85,7 @@ def main():
     application.add_handler(CallbackQueryHandler(button_callback_handler))
     
     # Schedule crawler job every hour
-    application.job_queue.run_repeating(scheduled_crawler, interval=3600, first=10)
-    
-    # Add shutdown handler
-    application.add_shutdown_handler(shutdown_handler)
+    # job_queue.run_repeating(scheduled_crawler, interval=3600, first=10)
     
     try:
         logger.info("Starting bot with job queue...")
